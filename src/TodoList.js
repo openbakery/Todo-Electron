@@ -1,6 +1,7 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 
-import {Todo} from './Todo'
+import {ExpeditedTodo, Todo} from './Todo'
 
 
 export class TodoList extends React.Component {
@@ -11,16 +12,13 @@ export class TodoList extends React.Component {
 	render() {
 		const renderedTodos = this.state.todos
 				.sort((t1, t2) => {
-					let t1Weight = t1.done + t1.createdDate.getTime().toString()
-					let t2Weight = t2.done + t2.createdDate.getTime().toString()
-					
-					return t1Weight.localeCompare(t2Weight)
+					return t1.weight().localeCompare(t2.weight())
 				})
-				.map(todo => <TodoItem key={todo.id} todo={todo} 
+				.map(todo => <ExpeditedTodoItem key={todo.id} todo={todo} 
 			toggleDone={this._toggleDone.bind(this)}/>)
 
 		return (<div>
-			<NewTodo createTodo={ text => this.setState({ todos: [...this.state.todos, new Todo(text) ] }) }/>
+			<NewPrioritizedTodo addTodo={ todo => this.setState({ todos: [...this.state.todos, todo ] }) }/>
 			<ul>
 				{ renderedTodos }
 			</ul>
@@ -46,8 +44,19 @@ class TodoItem extends React.Component {
 			</li>)
 	}
 
+
+
 	_onChange(event) {
-		this.props.toggleDone(event.target.value, this.props.todo.id)
+		this.props.toggleDone(event.target.checked, this.props.todo.id)
+	}
+}
+
+class ExpeditedTodoItem extends TodoItem {
+	componentDidMount() {
+		const currentNode=ReactDOM.findDOMNode(this)
+		if(this.props.todo.expedited) {
+			currentNode.style.color='red'
+		}
 	}
 }
 
@@ -64,14 +73,42 @@ class NewTodo extends React.Component {
 	render() {
 
 		return (<div>
-			<input type="text" value={this.state.newTodoValue} onChange={(event) => { 
-				this.setState({ newTodoValue: event.target.value })
-			}}/>
+			{this.renderInputFields()}
 			<input type="button" value="Add" onClick={() => {
-				this.props.createTodo(this.state.newTodoValue)
+				this.props.addTodo(this.createTodo())
 				this.setState({newTodoValue: ""})
 			}}/>
 			</div>)
 	}
 
+	createTodo() {
+		return new Todo(this.state.newTodoValue)
+	}
+
+	renderInputFields() {
+		return (<input type="text" value={this.state.newTodoValue} onChange={(event) => { 
+				this.setState({ newTodoValue: event.target.value })
+		}}/>)
+	}
+}
+
+class NewPrioritizedTodo extends NewTodo {
+	constructor(props) {
+		super(props)
+		this.state = Object.assign({}, this.state, { expedite: false })
+	}
+
+	renderInputFields() {
+		return (<span>
+			{super.renderInputFields()}
+			<input type="checkbox" checked={this.state.expedite} 
+					onChange={(event) => 
+						this.setState({ expedite: event.target.checked })}/>
+			"Expedite"
+			</span>)
+	}
+
+	createTodo() {
+		return new ExpeditedTodo(this.state.newTodoValue, this.state.expedite)
+	}
 }

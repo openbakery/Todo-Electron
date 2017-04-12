@@ -13,4 +13,19 @@ export class Todo {
 		return this
 	}
 
+	weight() {
+		return this.done + this.createdDate.getTime().toString()
+	}
+}
+
+export class ExpeditedTodo extends Todo {
+	constructor(text, expedited) {
+		super(text)
+		this.expedited = expedited
+	}
+
+	weight() {
+		return this.done + '' + !this.expedited + this.createdDate.getTime().toString()
+	}
+
 }
