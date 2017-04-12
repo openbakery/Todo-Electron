@@ -1,5 +1,7 @@
 import React from 'react'
-import uuid from 'uuid/v4'
+
+import {Todo} from './Todo'
+
 
 export class TodoList extends React.Component {
 	constructor(props) {
@@ -7,18 +9,45 @@ export class TodoList extends React.Component {
 		this.state = { todos: [] }
 	}
 	render() {
-		const renderedTodos = this.state.todos.map(todo => <li key={todo.id}>{todo.text}</li>)
+		const renderedTodos = this.state.todos
+				.sort((t1, t2) => {
+					let t1Weight = t1.done + t1.createdDate.getTime().toString()
+					let t2Weight = t2.done + t2.createdDate.getTime().toString()
+					
+					return t1Weight.localeCompare(t2Weight)
+				})
+				.map(todo => <TodoItem key={todo.id} todo={todo} 
+			toggleDone={this._toggleDone.bind(this)}/>)
 
 		return (<div>
-			<NewTodo createTodo={ t => this.setState({ todos: [...this.state.todos, {
-				id: uuid(),
-				text: t
-				}]}) }/>
+			<NewTodo createTodo={ text => this.setState({ todos: [...this.state.todos, new Todo(text) ] }) }/>
 			<ul>
 				{ renderedTodos }
 			</ul>
 			
 		</div>)
+	}
+	_toggleDone(done, id) {
+		this.setState({
+			todos: this.state.todos.map(t => t.id==id?t.toggleDone(done):t)
+		})
+	}
+}
+
+
+class TodoItem extends React.Component {
+
+	render() {
+		return (
+			<li>
+				<input type="checkbox" checked={this.props.todo.done} 
+					onChange={this._onChange.bind(this)}/>
+				<span>{this.props.todo.text}</span>
+			</li>)
+	}
+
+	_onChange(event) {
+		this.props.toggleDone(event.target.value, this.props.todo.id)
 	}
 }
 
